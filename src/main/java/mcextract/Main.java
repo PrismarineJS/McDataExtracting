@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.Bootstrap;
+import net.minecraft.MinecraftVersion;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.registry.Registry;
@@ -21,7 +22,8 @@ public class Main {
 	public static void main(String[] args) {
 		final boolean write = true;
 
-		System.err.println("Initializing Minecraft registries ...");
+		final String mcVersion = new MinecraftVersion().getName();
+		System.err.println("Initializing Minecraft " + mcVersion + " registries ...");
 		Bootstrap.initialize();
 		System.err.println("Done.");
 
@@ -36,7 +38,7 @@ public class Main {
 			outString = outString.replaceAll("\\],\"", "],\n\"");
 
 			String nowIso = ISO_DATE_TIME.format(LocalDateTime.now());
-			String outPath = "block_collision_shapes_" + nowIso + ".json";
+			String outPath = "block_collision_shapes_" + mcVersion + "_" + nowIso + ".json";
 			System.err.println("Writing " + outPath + " ...");
 			try {
 				Files.write(Paths.get(outPath), outString.getBytes(UTF_8));
