@@ -72,7 +72,7 @@ public class Main {
 		final HashMap<Shape, Integer> shapeIds = new HashMap<>();
 
 		for (final Block block : Registry.BLOCK) {
-			final ImmutableList<BlockState> states = block.getStateFactory().getStates();
+			final ImmutableList<BlockState> states = block.getStateManager().getStates();
 			final int[] boxesByState = new int[states.size()];
 
 			final Shape state0Shape = new Shape(block.getDefaultState());
@@ -120,7 +120,7 @@ public class Main {
 		final ArrayList<String> failures = new ArrayList<>();
 		for (final Block block : Registry.BLOCK) {
 			final String blockId = getBlockIdString(block);
-			final ImmutableList<BlockState> states = block.getStateFactory().getStates();
+			final ImmutableList<BlockState> states = block.getStateManager().getStates();
 			for (int stateId = 0; stateId < states.size(); stateId++) {
 				BlockState blockState = states.get(stateId);
 
