@@ -1,0 +1,35 @@
+buildscript {
+	repositories {
+		jcenter()
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		gradlePluginPortal()
+	}
+	dependencies {
+		classpath 'net.fabricmc:fabric-loom:0.2.5-SNAPSHOT'
+	}
+}
+
+apply plugin: 'fabric-loom'
+apply plugin: 'application'
+
+group 'mcextract'
+version '0.1.1-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	//to change the versions see the gradle.properties file
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings "net.fabricmc:yarn:${project.yarn_mappings}"
+}
+
+application {
+    mainClassName = "mcextract.Main"
+}
