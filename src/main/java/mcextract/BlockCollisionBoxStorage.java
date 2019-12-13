@@ -35,14 +35,10 @@ public class BlockCollisionBoxStorage {
 				final Shape shape = shapes.get(value.getAsInt());
 				blocks.put(blockEntry.getKey(), new SameShapePerBlockState(shape));
 			} else {
-				final JsonObject shapeIdsByBlockStateId = value.getAsJsonObject();
-				final Integer maxStateId = shapeIdsByBlockStateId.entrySet().stream()
-						.map(e -> Integer.parseInt(e.getKey()))
-						.max(Comparator.naturalOrder()).orElse(0);
-				final Shape[] blockStatesShapes = new Shape[maxStateId + 1];
-				for (Map.Entry<String, JsonElement> bsEntry : shapeIdsByBlockStateId.entrySet()) {
-					final Shape shape = shapes.get(bsEntry.getValue().getAsInt());
-					blockStatesShapes[Integer.parseInt(bsEntry.getKey())] = shape;
+				final JsonArray shapeIds = value.getAsJsonArray();
+				final Shape[] blockStatesShapes = new Shape[shapeIds.size()];
+				for (int i = 0; i < blockStatesShapes.length; i++) {
+					blockStatesShapes[i] = shapes.get(shapeIds.get(i).getAsInt());
 				}
 				blocks.put(blockEntry.getKey(), new OneShapePerBlockState(blockStatesShapes));
 			}
@@ -82,7 +78,10 @@ public class BlockCollisionBoxStorage {
 		@Override
 		public Shape getShapeIdForBlockState(int blockStateId) {
 			if (blockStateId < 0) throw new IllegalArgumentException("block state id < 0");
-			if (blockStateId >= shapes.length) return Shape.EMPTY;
+			if (blockStateId >= shapes.length) {
+				throw new IllegalArgumentException("block state id " + blockStateId
+						+ " out of bounds for length " + shapes.length);
+			}
 			if (shapes[blockStateId] == null) return Shape.EMPTY;
 			return shapes[blockStateId];
 		}

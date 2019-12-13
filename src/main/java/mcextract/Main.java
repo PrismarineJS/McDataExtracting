@@ -1,6 +1,7 @@
 package mcextract;
 
 import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.minecraft.Bootstrap;
 import net.minecraft.block.Block;
@@ -58,7 +59,7 @@ public class Main {
 	 *   "shapes": { [shape]: [[x1,y1,z1, x2,y2,z2], ...] },
 	 *   "blocks": {
 	 *     [block]: shape, // all block states have same shape
-	 *     [block]: { [state]: shape, ... }, // at least one different; empty shapes omitted
+	 *     [block]: [ shape, ... ], // at least one state shape different from others; indexed by stateId
 	 *     ...
 	 *   }
 	 * }
@@ -69,8 +70,8 @@ public class Main {
 		final HashMap<Shape, Integer> shapeIds = new HashMap<>();
 
 		for (final Block block : Registry.BLOCK) {
-			final HashMap<Integer, Integer> boxesByState = new HashMap<>();
 			final ImmutableList<BlockState> states = block.getStateFactory().getStates();
+			final int[] boxesByState = new int[states.size()];
 
 			final Shape state0Shape = new Shape(block.getDefaultState());
 			final Integer state0ShapeId = lookupAndPersistShapeId(state0Shape, shapeIds);
@@ -81,9 +82,7 @@ public class Main {
 
 				final Shape stateShape = new Shape(blockState);
 				final Integer stateShapeId = lookupAndPersistShapeId(stateShape, shapeIds);
-				if (!stateShape.boxes.isEmpty()) {
-					boxesByState.put(stateId, stateShapeId);
-				}
+				boxesByState[stateId] = stateShapeId;
 
 				if (allSame && !Objects.equals(state0ShapeId, stateShapeId)) {
 					allSame = false;
@@ -94,14 +93,14 @@ public class Main {
 			if (allSame) {
 				allBlocksJson.addProperty(blockId, state0ShapeId);
 			} else {
-				final JsonObject blockJson = new JsonObject();
-				for (Map.Entry<Integer, Integer> entry : boxesByState.entrySet()) {
-					blockJson.addProperty(entry.getKey().toString(), entry.getValue());
+				final JsonArray blockJson = new JsonArray();
+				for (int shapeId : boxesByState) {
+					blockJson.add(shapeId);
 				}
 				allBlocksJson.add(blockId, blockJson);
 
-				System.err.println(blockId + ": " + boxesByState.size() + " states, "
-						+ (boxesByState.size() - blockJson.size()) + " empty");
+				System.err.println(blockId + ": " + boxesByState.length + " states, "
+						+ (boxesByState.length - blockJson.size()) + " empty");
 			}
 		}
 
