@@ -103,25 +103,31 @@ public class Main {
 
 		for (final Block block : Block.REGISTRY) {
 			try {
-				final ImmutableList<IBlockState> states = block.getBlockState().getValidStates();
 				final int[] boxesByState = new int[16];
 
 				final Shape state0Shape = new Shape(block.getDefaultState(), world);
 				final Integer state0ShapeId = lookupAndPersistShapeId(state0Shape, shapeIds);
 				boolean allSame = true;
 
-				for (int stateId = 0; stateId < states.size(); stateId++) {
-					IBlockState blockState = states.get(stateId);
+				for (int meta = 0; meta < 16; meta++) {
+					final IBlockState blockState;
+					try {
+						blockState = block.getStateFromMeta(meta);
+					} catch (IllegalArgumentException e) {
+						// probably invalid meta
+						System.err.println(e.getMessage());
+						continue;
+					}
 					try {
 						final Shape stateShape = new Shape(blockState, world);
 						final Integer stateShapeId = lookupAndPersistShapeId(stateShape, shapeIds);
-						boxesByState[block.getMetaFromState(blockState)] = stateShapeId;
+						boxesByState[meta] = stateShapeId;
 
 						if (allSame && !Objects.equals(state0ShapeId, stateShapeId)) {
 							allSame = false;
 						}
 					} catch (Exception e) {
-						System.err.println("in blockState " + blockState);
+						System.err.println("in blockState" + blockState + " meta " + meta);
 						e.printStackTrace();
 					}
 				}
@@ -136,8 +142,8 @@ public class Main {
 					}
 					allBlocksJson.add(blockId, blockJson);
 
-					System.err.println(blockId + ": " + boxesByState.length + " states, "
-							+ (boxesByState.length - blockJson.size()) + " empty");
+					System.err.println(blockId + ": " + blockJson.size() + " states, "
+							+ (16 - blockJson.size()) + " empty");
 				}
 			} catch (Exception e) {
 				System.err.println("in block " + block);
@@ -159,15 +165,14 @@ public class Main {
 		final ArrayList<String> failures = new ArrayList<>();
 		for (final Block block : Block.REGISTRY) {
 			final String blockId = getBlockStateIdString(block);
-			final ImmutableList<IBlockState> states = block.getBlockState().getValidStates();
-			for (int stateId = 0; stateId < states.size(); stateId++) {
-				IBlockState blockState = states.get(stateId);
+			for (int meta = 0; meta < 16; meta++) {
+				IBlockState blockState = block.getStateFromMeta(meta);
 				try {
 					final Shape mcShape = new Shape(blockState, world);
-					final Shape storageShape = storage.getBlockShape(blockId, stateId);
+					final Shape storageShape = storage.getBlockShape(blockId, meta);
 					if (!mcShape.equals(storageShape)) {
-						System.err.println("ERROR: shapes differ: block=" + blockId + " state=" + stateId);
-						failures.add(blockId + ":" + stateId);
+						System.err.println("ERROR: shapes differ: block=" + blockId + " state=" + meta);
+						failures.add(blockId + ":" + meta);
 					}
 				} catch (Exception e) {
 					System.err.println("in blockState " + blockState);
