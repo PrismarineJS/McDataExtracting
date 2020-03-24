@@ -1,0 +1,4 @@
+/.gradle/
+/build/
+/logs/
+block_collision_shapes*.json
