@@ -46,13 +46,13 @@ public class Shape {
 	}
 
 	public static JsonArray jsonArrayFromBox(Box box) {
-		final JsonArray boxJson = new JsonArray();
-		boxJson.add(box.x1);
-		boxJson.add(box.y1);
-		boxJson.add(box.z1);
-		boxJson.add(box.x2);
-		boxJson.add(box.y2);
-		boxJson.add(box.z2);
+        final JsonArray boxJson = new JsonArray();
+        boxJson.add(box.minX);
+		boxJson.add(box.minY);
+		boxJson.add(box.minZ);
+		boxJson.add(box.maxX);
+		boxJson.add(box.maxY);
+		boxJson.add(box.maxZ);
 		return boxJson;
 	}
 }
