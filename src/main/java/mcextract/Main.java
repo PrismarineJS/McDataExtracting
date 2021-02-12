@@ -22,7 +22,7 @@ public class Main {
 	public static void main(String[] args) {
 		final boolean write = true;
 
-		final String mcVersion = new MinecraftVersion().getName();
+        final String mcVersion = MinecraftVersion.create().getName();
 		System.err.println("Initializing Minecraft " + mcVersion + " registries ...");
 		Bootstrap.initialize();
 		System.err.println("Done.");
