@@ -1,0 +1,37 @@
+name: Start Dump
+
+on: 
+  workflow_dispatch:
+    inputs:
+      minecraftVersion:
+        description: 'Minecraft Version'     
+        required: true
+        default: '1.16'
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+  
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '15'
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1.4.3
+      with:
+        java-version: 1.8
+    - name: Grant execute permission for gradlew
+      run: chmod +x ./gradlew
+    - name: Run npm
+      run: npm run start -- ${{ github.event.inputs.minecraftVersion }}
+    - name: rm node_modules
+      run: rm -Rf node_modules
+    - name: make dir for json
+      run: mkdir json && mv blockCollisionShapes.json json/blockCollisionShapes.json
+    - name: save to artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: data
+        path: json
