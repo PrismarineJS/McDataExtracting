@@ -38,7 +38,7 @@ public class Main {
 			outString = outString.replaceAll("\\],\"", "],\n\"");
 
 			String nowIso = ISO_DATE_TIME.format(LocalDateTime.now());
-			String outPath = "block_collision_shapes_" + mcVersion + "_" + nowIso + ".json";
+			String outPath = "blockCollisionShapes.json";
 			System.err.println("Writing " + outPath + " ...");
 			try {
 				Files.write(Paths.get(outPath), outString.getBytes(UTF_8));
