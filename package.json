@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm install && node start.js"
+    "start": "npm install && node build-properties.js"
   },
   "keywords": [],
   "author": "",
