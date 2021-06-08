@@ -1,4 +1,4 @@
-  {
+{
   "name": "mcdataextracting",
   "version": "1.0.0",
   "description": "",
@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "fast-xml-parser": "^3.19.0",
     "node-fetch": "^2.6.1"
   }
 }
