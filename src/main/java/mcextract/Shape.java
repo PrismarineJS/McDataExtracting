@@ -1,10 +1,10 @@
 package mcextract;
 
 import com.google.gson.JsonArray;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.EmptyBlockView;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.EmptyBlockGetter;
 
 import java.util.*;
 
@@ -14,19 +14,19 @@ import java.util.*;
 public class Shape {
 	public static final Shape EMPTY = new Shape(Collections.emptyList());
 
-	public final Collection<Box> boxes;
+	public final Collection<AABB> boxes;
 
-	public Shape(Collection<Box> boxes) {
+	public Shape(Collection<AABB> boxes) {
 		this.boxes = boxes;
 	}
 
 	public Shape(BlockState blockState) {
-		this(blockState.getCollisionShape(EmptyBlockView.INSTANCE, BlockPos.ORIGIN).getBoundingBoxes());
+		this(blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).toAabbs());
 	}
 
 	public JsonArray toJson() {
 		final JsonArray boxesJson = new JsonArray();
-		for (Box box : boxes) {
+		for (AABB box : boxes) {
 			boxesJson.add(jsonArrayFromBox(box));
 		}
 		return boxesJson;
@@ -45,7 +45,7 @@ public class Shape {
 		return Objects.hash(boxes);
 	}
 
-	public static JsonArray jsonArrayFromBox(Box box) {
+	public static JsonArray jsonArrayFromBox(AABB box) {
         final JsonArray boxJson = new JsonArray();
         boxJson.add(box.minX);
 		boxJson.add(box.minY);

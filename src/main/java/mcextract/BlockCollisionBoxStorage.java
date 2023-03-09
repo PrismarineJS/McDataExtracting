@@ -1,7 +1,7 @@
 package mcextract;
 
 import com.google.gson.*;
-import net.minecraft.util.math.Box;
+import net.minecraft.world.phys.AABB;
 
 import java.util.*;
 
@@ -12,11 +12,11 @@ public class BlockCollisionBoxStorage {
 		final HashMap<Integer, Shape> shapes = new HashMap<>();
 		for (Map.Entry<String, JsonElement> shapeEntry : jsonRoot.getAsJsonObject("shapes").entrySet()) {
 			final JsonArray boxesJson = shapeEntry.getValue().getAsJsonArray();
-			final ArrayList<Box> boxes = new ArrayList<>(boxesJson.size());
+			final ArrayList<AABB> boxes = new ArrayList<>(boxesJson.size());
 			for (JsonElement element : boxesJson) {
 				final JsonArray a = element.getAsJsonArray();
 				int i = 0;
-				boxes.add(new Box(
+				boxes.add(new AABB(
 						a.get(i++).getAsDouble(),
 						a.get(i++).getAsDouble(),
 						a.get(i++).getAsDouble(),
