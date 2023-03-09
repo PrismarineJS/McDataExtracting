@@ -24,6 +24,6 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: ${{ matrix.java }}
+          java-version: ${{ matrix.javaVersion }}
       - run: npm run start -- ${{ matrix.mcVersion }}
       - run: gradle run --args="--outputDir output"
