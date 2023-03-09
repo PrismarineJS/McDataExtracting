@@ -23,6 +23,7 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v3
         with:
+          distribution: 'temurin'
           java-version: ${{ matrix.java }}
       - run: npm run start -- ${{ matrix.mcVersion }}
       - run: gradle run --args="--outputDir output"
