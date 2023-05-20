@@ -3,11 +3,14 @@ package mcextract;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.minecraft.Bootstrap;
-import net.minecraft.MinecraftVersion;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.SharedConstants;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Registry;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.RangedAttribute;
+import net.minecraft.resources.ResourceLocation;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,41 +21,121 @@ import java.util.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 
+import java.lang.reflect.Field;
+
 public class Main {
+	public static String getGameVersion() {
+		return SharedConstants.getCurrentVersion().getName();
+		// return SharedConstants.VERSION_STRING;
+	}
+
+	public static String getArg(String[] args, String argName, String defaultValue) {
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals(argName)) {
+				return args[i + 1];
+			}
+		}
+		return defaultValue;
+	}
+
+	// Static method to get a private field from a class
+	public static <T, E> T getPrivateValue(Class <? super E > classToAccess, E instance, String fieldName) {
+		try {
+			Field field = classToAccess.getDeclaredField(fieldName);
+			field.setAccessible(true);
+			return (T) field.get(instance);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	public static void main(String[] args) {
 		final boolean write = true;
 
-        final String mcVersion = MinecraftVersion.create().getName();
+		final String mcVersion = getGameVersion();
 		System.err.println("Initializing Minecraft " + mcVersion + " registries ...");
-		Bootstrap.initialize();
+		Bootstrap.bootStrap();
 		System.err.println("Done.");
 
-		System.err.println("Extracting Block data ...");
-		final JsonObject allBlocksJson = extractBlockCollisionShapes();
-		System.err.println("Extracted data for " + allBlocksJson.getAsJsonObject("blocks").size() + " blocks"
-				+ " and " + allBlocksJson.getAsJsonObject("shapes").size() + " distinct shapes.");
+		// Get --outputDir from args
+		String outputDir = getArg(args, "--outputDir", "");
+		if (outputDir.length() > 0 && !outputDir.endsWith("/")) {
+			outputDir += "/";
+		}
+		// make the output directory if it doesn't exist
+		try {
+			Files.createDirectories(Paths.get(outputDir));
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("Failed to create output directory.");
+		}
+		System.err.println("Extraction output directory: " + outputDir);
+
+		JsonObject allBlocksJson = doBlockShapeExtraction();
+		JsonObject allAttributesJson = doAttributeExtraction();
 
 		if (write) {
-			String outString = allBlocksJson.toString();
-			outString = outString.replaceAll("\\},|null,|\"[_a-zA-Z]+\":[0-9]+,", "$0\n");
-			outString = outString.replaceAll("\\],\"", "],\n\"");
-
-			String nowIso = ISO_DATE_TIME.format(LocalDateTime.now());
-			String outPath = "blockCollisionShapes.json";
-			System.err.println("Writing " + outPath + " ...");
+			// Block shapes
 			try {
-				Files.write(Paths.get(outPath), outString.getBytes(UTF_8));
-				System.err.println("Done.");
+				writeBlockShapes(outputDir, allBlocksJson);		
+				System.err.println("Done with block shapes.");
 			} catch (IOException e) {
 				e.printStackTrace();
-				System.err.println("Failed.");
+				System.err.println("Failed to write block shapes.");
+			}
+
+			// Attributes
+			try {
+				writeAttributes(outputDir, allAttributesJson);
+				System.err.println("Done with attributes.");
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.err.println("Failed to write attributes.");
 			}
 		}
 
-		System.err.println("Running sanity checks ...");
+		System.err.println("Running collision sanity checks ...");
 		final ArrayList<String> failures = runSanityChecks(new BlockCollisionBoxStorage(allBlocksJson));
 		System.err.println(failures.size() + " failures.");
 	}
+
+	public static JsonObject doBlockShapeExtraction() {
+		System.err.println("Extracting Block data ...");
+		final JsonObject allBlocksJson = extractBlockCollisionShapes();
+		System.err.println("Extracted data for " + allBlocksJson.getAsJsonObject("blocks").size() + " blocks"
+			+ " and " + allBlocksJson.getAsJsonObject("shapes").size() + " distinct shapes.");
+		return allBlocksJson;
+	}
+
+	public static void writeBlockShapes(String outputDir, JsonObject allBlocksJson) throws IOException {
+		String outString = allBlocksJson.toString();
+		outString = outString.replaceAll("\\},|null,|\"[_a-zA-Z]+\":[0-9]+,", "$0\n");
+		outString = outString.replaceAll("\\],\"", "],\n\"");
+
+		String nowIso = ISO_DATE_TIME.format(LocalDateTime.now());
+		String outPath = outputDir + "blockCollisionShapes.json";
+		System.err.println("Writing block shapes to '" + outPath + "'...");
+		Files.write(Paths.get(outPath), outString.getBytes(UTF_8));
+	}
+
+	public static JsonObject doAttributeExtraction() {
+		System.err.println("Extracting Attribute data ...");
+		final JsonObject allAttributesJson = extractAttributes();
+		System.err.println("Extracted data for " + allAttributesJson.size() + " attributes.");
+		return allAttributesJson;
+	}
+
+	public static void writeAttributes(String outputDir, JsonObject allAttributesJson) throws IOException {
+		// Pretty pritned JSON
+		String outString = allAttributesJson.toString();
+		outString = outString.replaceAll("\\},|null,|\"[_a-zA-Z]+\":[0-9]+,", "$0\n");
+		String nowIso = ISO_DATE_TIME.format(LocalDateTime.now());
+		String outPath = outputDir + "attributes.json";
+		System.err.println("Writing attributes to '" + outPath + "'...");
+		Files.write(Paths.get(outPath), outString.getBytes(UTF_8));
+	}
+
+	// COLLISIONS
 
 	/**
 	 * output data structure:
@@ -72,10 +155,10 @@ public class Main {
 		final HashMap<Shape, Integer> shapeIds = new HashMap<>();
 
 		for (final Block block : Registry.BLOCK) {
-			final ImmutableList<BlockState> states = block.getStateManager().getStates();
+			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			final int[] boxesByState = new int[states.size()];
 
-			final Shape state0Shape = new Shape(block.getDefaultState());
+			final Shape state0Shape = new Shape(block.defaultBlockState());
 			final Integer state0ShapeId = lookupAndPersistShapeId(state0Shape, shapeIds);
 			boolean allSame = true;
 
@@ -120,7 +203,7 @@ public class Main {
 		final ArrayList<String> failures = new ArrayList<>();
 		for (final Block block : Registry.BLOCK) {
 			final String blockId = getBlockIdString(block);
-			final ImmutableList<BlockState> states = block.getStateManager().getStates();
+			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			for (int stateId = 0; stateId < states.size(); stateId++) {
 				BlockState blockState = states.get(stateId);
 
@@ -142,8 +225,34 @@ public class Main {
 	}
 
 	private static String getBlockIdString(Block block) {
-		final String blockId = Registry.BLOCK.getId(block).toString();
+		final String blockId = Integer.toString(Registry.BLOCK.getId(block));
 		if (!blockId.startsWith("minecraft:")) return blockId;
 		return blockId.replaceAll("^minecraft:", "");
+	}
+
+	// ATTRIBUTES
+	public static JsonObject extractAttributes() {
+		final JsonObject allAttributes = new JsonObject();
+		for (Attribute attr : Registry.ATTRIBUTE) {
+			final JsonObject attrJson = new JsonObject();
+			attrJson.addProperty("default", attr.getDefaultValue());
+			if (attr instanceof RangedAttribute) {
+				final RangedAttribute rangedAttr = (RangedAttribute) attr;
+				double minVal = getPrivateValue(RangedAttribute.class, rangedAttr, "minValue");
+				double maxVal = getPrivateValue(RangedAttribute.class, rangedAttr, "maxValue");
+				attrJson.addProperty("min", minVal);
+				attrJson.addProperty("max", maxVal);
+			}
+
+			ResourceLocation key = Registry.ATTRIBUTE.getKey(attr);
+			if (key == null) {
+				System.err.println("ERROR: attribute has no key: " + attr);
+				continue;
+			}
+			attrJson.addProperty("description", attr.getDescriptionId());
+			attrJson.addProperty("id", Registry.ATTRIBUTE.getId(attr));
+			allAttributes.add(key.toString(), attrJson);
+		}
+		return allAttributes;
 	}
 }
