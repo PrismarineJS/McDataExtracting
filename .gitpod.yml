@@ -5,5 +5,5 @@
 # Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
 
 tasks:
-  - init: sdk install java -y && npm install && gradle build
+  - init: sdk install java 17.0.7-amzn && npm install && gradle build
     command: npm run start

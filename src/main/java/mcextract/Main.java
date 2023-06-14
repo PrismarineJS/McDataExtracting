@@ -7,7 +7,8 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.SharedConstants;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.resources.ResourceLocation;
@@ -26,7 +27,6 @@ import java.lang.reflect.Field;
 public class Main {
 	public static String getGameVersion() {
 		return SharedConstants.getCurrentVersion().getName();
-		// return SharedConstants.VERSION_STRING;
 	}
 
 	public static String getArg(String[] args, String argName, String defaultValue) {
@@ -52,6 +52,7 @@ public class Main {
 	public static void main(String[] args) {
 		final boolean write = true;
 
+		SharedConstants.tryDetectVersion();
 		final String mcVersion = getGameVersion();
 		System.err.println("Initializing Minecraft " + mcVersion + " registries ...");
 		Bootstrap.bootStrap();
@@ -154,7 +155,7 @@ public class Main {
 		final JsonObject allBlocksJson = new JsonObject();
 		final HashMap<Shape, Integer> shapeIds = new HashMap<>();
 
-		for (final Block block : Registry.BLOCK) {
+		for (final Block block : BuiltInRegistries.BLOCK) {
 			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			final int[] boxesByState = new int[states.size()];
 
@@ -201,7 +202,7 @@ public class Main {
 
 	private static ArrayList<String> runSanityChecks(BlockCollisionBoxStorage storage) {
 		final ArrayList<String> failures = new ArrayList<>();
-		for (final Block block : Registry.BLOCK) {
+		for (final Block block : BuiltInRegistries.BLOCK) {
 			final String blockId = getBlockIdString(block);
 			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			for (int stateId = 0; stateId < states.size(); stateId++) {
@@ -225,7 +226,7 @@ public class Main {
 	}
 
 	private static String getBlockIdString(Block block) {
-		final String blockId = Integer.toString(Registry.BLOCK.getId(block));
+		final String blockId = Integer.toString(BuiltInRegistries.BLOCK.getId(block));
 		if (!blockId.startsWith("minecraft:")) return blockId;
 		return blockId.replaceAll("^minecraft:", "");
 	}
@@ -233,7 +234,7 @@ public class Main {
 	// ATTRIBUTES
 	public static JsonObject extractAttributes() {
 		final JsonObject allAttributes = new JsonObject();
-		for (Attribute attr : Registry.ATTRIBUTE) {
+		for (Attribute attr : BuiltInRegistries.ATTRIBUTE) {
 			final JsonObject attrJson = new JsonObject();
 			attrJson.addProperty("default", attr.getDefaultValue());
 			if (attr instanceof RangedAttribute) {
@@ -244,13 +245,13 @@ public class Main {
 				attrJson.addProperty("max", maxVal);
 			}
 
-			ResourceLocation key = Registry.ATTRIBUTE.getKey(attr);
+			ResourceLocation key = BuiltInRegistries.ATTRIBUTE.getKey(attr);
 			if (key == null) {
 				System.err.println("ERROR: attribute has no key: " + attr);
 				continue;
 			}
 			attrJson.addProperty("description", attr.getDescriptionId());
-			attrJson.addProperty("id", Registry.ATTRIBUTE.getId(attr));
+			attrJson.addProperty("id", BuiltInRegistries.ATTRIBUTE.getId(attr));
 			allAttributes.add(key.toString(), attrJson);
 		}
 		return allAttributes;

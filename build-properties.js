@@ -13,7 +13,7 @@ async function start () {
   const [,, wantedVersion] = process.argv
   const yarnMappingsVersion = await getYarnMappingsVersion(wantedVersion)
   const fabricLoomVersion = await getFabricLoomVersion()
-  const text = `minecraft_version=${wantedVersion}\nyarn_mappings=${yarnMappingsVersion}\nfabric_loom_version=${fabricLoomVersion}`
+  const text = `minecraft_version=${wantedVersion}\nyarn_mappings=${yarnMappingsVersion}\nfabric_loom_version=${fabricLoomVersion}\norg.gradle.jvmargs=-Xmx4096m`
   await fs.writeFile('gradle.properties', text)
   console.info('Config file written.')
 }
