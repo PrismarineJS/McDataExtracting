@@ -13,7 +13,7 @@ async function start () {
   const [,, wantedVersion] = process.argv
   const yarnMappingsVersion = await getYarnMappingsVersion(wantedVersion)
   const fabricLoomVersion = await getFabricLoomVersion()
-  const text = `minecraft_version=${wantedVersion}\nyarn_mappings=${yarnMappingsVersion}\nfabric_loom_version=${fabricLoomVersion}`
+  const text = `minecraft_version=${wantedVersion}\nyarn_mappings=${yarnMappingsVersion}\nfabric_loom_version=${fabricLoomVersion}\norg.gradle.jvmargs=-Xmx4G -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8`
   await fs.writeFile('gradle.properties', text)
   console.info('Config file written.')
 }
@@ -31,7 +31,7 @@ async function getYarnMappingsVersion (wantedVersion) {
 
 async function getFabricLoomVersion () {
   const xmlData = (await (await fetch('https://maven.fabricmc.net/net/fabricmc/fabric-loom/maven-metadata.xml')).text())
-  return parser.parse(xmlData).metadata.versioning.release
+  return new parser.XMLParser().parse(xmlData).metadata.versioning.release
 }
 
 start()

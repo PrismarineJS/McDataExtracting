@@ -3,6 +3,8 @@ package mcextract;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.SharedConstants;
 import net.minecraft.world.level.block.Block;
@@ -25,6 +27,7 @@ import java.lang.reflect.Field;
 
 public class Main {
 	public static String getGameVersion() {
+        SharedConstants.tryDetectVersion();
 		return SharedConstants.getCurrentVersion().getName();
 		// return SharedConstants.VERSION_STRING;
 	}
@@ -77,7 +80,7 @@ public class Main {
 		if (write) {
 			// Block shapes
 			try {
-				writeBlockShapes(outputDir, allBlocksJson);		
+				writeBlockShapes(outputDir, allBlocksJson);
 				System.err.println("Done with block shapes.");
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -154,7 +157,7 @@ public class Main {
 		final JsonObject allBlocksJson = new JsonObject();
 		final HashMap<Shape, Integer> shapeIds = new HashMap<>();
 
-		for (final Block block : Registry.BLOCK) {
+		for (final Block block : BuiltInRegistries.BLOCK) {
 			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			final int[] boxesByState = new int[states.size()];
 
@@ -201,7 +204,7 @@ public class Main {
 
 	private static ArrayList<String> runSanityChecks(BlockCollisionBoxStorage storage) {
 		final ArrayList<String> failures = new ArrayList<>();
-		for (final Block block : Registry.BLOCK) {
+		for (final Block block : BuiltInRegistries.BLOCK) {
 			final String blockId = getBlockIdString(block);
 			final ImmutableList<BlockState> states = block.getStateDefinition().getPossibleStates();
 			for (int stateId = 0; stateId < states.size(); stateId++) {
@@ -225,15 +228,13 @@ public class Main {
 	}
 
 	private static String getBlockIdString(Block block) {
-		final String blockId = Integer.toString(Registry.BLOCK.getId(block));
-		if (!blockId.startsWith("minecraft:")) return blockId;
-		return blockId.replaceAll("^minecraft:", "");
+		return BuiltInRegistries.BLOCK.getKey(block).getPath();
 	}
 
 	// ATTRIBUTES
 	public static JsonObject extractAttributes() {
 		final JsonObject allAttributes = new JsonObject();
-		for (Attribute attr : Registry.ATTRIBUTE) {
+		for (Attribute attr : BuiltInRegistries.ATTRIBUTE) {
 			final JsonObject attrJson = new JsonObject();
 			attrJson.addProperty("default", attr.getDefaultValue());
 			if (attr instanceof RangedAttribute) {
@@ -244,13 +245,13 @@ public class Main {
 				attrJson.addProperty("max", maxVal);
 			}
 
-			ResourceLocation key = Registry.ATTRIBUTE.getKey(attr);
+			ResourceLocation key = BuiltInRegistries.ATTRIBUTE.getKey(attr);
 			if (key == null) {
 				System.err.println("ERROR: attribute has no key: " + attr);
 				continue;
 			}
 			attrJson.addProperty("description", attr.getDescriptionId());
-			attrJson.addProperty("id", Registry.ATTRIBUTE.getId(attr));
+			attrJson.addProperty("id", BuiltInRegistries.ATTRIBUTE.getId(attr));
 			allAttributes.add(key.toString(), attrJson);
 		}
 		return allAttributes;

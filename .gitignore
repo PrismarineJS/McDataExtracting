@@ -8,3 +8,5 @@ node_modules/
 gradle.properties
 block_collision_shapes*.json
 output/
+.idea/
+*.iml
