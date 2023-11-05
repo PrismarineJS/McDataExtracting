@@ -21,7 +21,12 @@ public class Shape {
 	}
 
 	public Shape(BlockState blockState) {
-		this(blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).toAabbs());
+		var collisionShape = blockState.getCollisionShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+        var offset = blockState.getOffset(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
+        var reversedOffset = offset.reverse();
+        var collisionShapeWithoutOffset = collisionShape.move(reversedOffset.x, reversedOffset.y, reversedOffset.z);
+
+        this.boxes = collisionShapeWithoutOffset.toAabbs();
 	}
 
 	public JsonArray toJson() {

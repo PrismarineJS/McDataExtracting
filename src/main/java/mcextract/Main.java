@@ -10,6 +10,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -67,14 +68,14 @@ public class Main {
         }
         System.err.println("Extraction output directory: " + outputDir);
 
-        var allBlocksShapeJson = doBlockShapeExtraction();
-        var allBlocksJson = doBlockExtraction();
-        var allAttributesJson = doAttributeExtraction();
+        var blockShapesJson = doBlockShapeExtraction();
+        var blockPropertiesJson = doBlockPropertyExtraction();
+        var attributesJson = doAttributeExtraction();
 
         if (write) {
             // Block shapes
             try {
-                writeBlockShapes(outputDir, allBlocksShapeJson);
+                writeJson(outputDir, "blockCollisionShapes.json", blockShapesJson);
                 System.err.println("Done with block shapes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -83,7 +84,7 @@ public class Main {
 
             // Blocks
             try {
-                writeBlocks(outputDir, allBlocksJson);
+                writeJson(outputDir, "blockProperties.json",blockPropertiesJson);
                 System.err.println("Done with block shapes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -92,7 +93,7 @@ public class Main {
 
             // Attributes
             try {
-                writeAttributes(outputDir, allAttributesJson);
+                writeJson(outputDir, "attributes.json",attributesJson);
                 System.err.println("Done with attributes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -101,48 +102,35 @@ public class Main {
         }
 
         System.err.println("Running collision sanity checks ...");
-        var failures = runSanityChecks(new BlockCollisionBoxStorage(allBlocksShapeJson));
+        var failures = runSanityChecks(new BlockCollisionBoxStorage(blockShapesJson));
         System.err.println(failures.size() + " failures.");
     }
 
     public static JsonObject doBlockShapeExtraction() {
         System.err.println("Extracting Block shape data ...");
-        var allBlocksJson = extractBlockCollisionShapes();
-        System.err.println("Extracted data for " + allBlocksJson.getAsJsonObject("blocks").size() + " blocks"
-                + " and " + allBlocksJson.getAsJsonObject("shapes").size() + " distinct shapes.");
-        return allBlocksJson;
+        var blockShapesJson = extractBlockCollisionShapes();
+        System.err.println("Extracted data for " + blockShapesJson.getAsJsonObject("blocks").size() + " blocks"
+                + " and " + blockShapesJson.getAsJsonObject("shapes").size() + " distinct shapes.");
+        return blockShapesJson;
     }
 
-    public static JsonObject doBlockExtraction() {
+    public static JsonObject doBlockPropertyExtraction() {
         System.err.println("Extracting Block data ...");
-        var allBlocksJson = extractBlocks();
-        System.err.println("Extracted data for " + allBlocksJson.size() + " blocks.");
-        return allBlocksJson;
+        var blockPropertiesJson = extractBlockProperties();
+        System.err.println("Extracted data for " + blockPropertiesJson.size() + " blocks.");
+        return blockPropertiesJson;
     }
 
     public static JsonObject doAttributeExtraction() {
         System.err.println("Extracting Attribute data ...");
-        var allAttributesJson = extractAttributes();
-        System.err.println("Extracted data for " + allAttributesJson.size() + " attributes.");
-        return allAttributesJson;
+        var attributesJson = extractAttributes();
+        System.err.println("Extracted data for " + attributesJson.size() + " attributes.");
+        return attributesJson;
     }
 
-    public static void writeBlockShapes(String outputDir, JsonObject json) throws IOException {
-        var outPath = outputDir + "blockCollisionShapes.json";
-        System.err.println("Writing block shapes to '" + outPath + "'...");
-        Files.writeString(Paths.get(outPath), GSON.toJson(json));
-    }
-
-    public static void writeBlocks(String outputDir, JsonObject json) throws IOException {
-        var outPath = outputDir + "blocks.json";
-        System.err.println("Writing blocks to '" + outPath + "'...");
-        Files.writeString(Paths.get(outPath), GSON.toJson(json));
-    }
-
-    public static void writeAttributes(String outputDir, JsonObject json) throws IOException {
-        // Pretty printed JSON
-        var outPath = outputDir + "attributes.json";
-        System.err.println("Writing attributes to '" + outPath + "'...");
+    public static void writeJson(String outputDir, String fileName, JsonObject json) throws IOException {
+        var outPath = outputDir + fileName;
+        System.err.println("Writing to '" + outPath + "'...");
         Files.writeString(Paths.get(outPath), GSON.toJson(json));
     }
 
@@ -274,7 +262,7 @@ public class Main {
     }
 
     // BLOCKS
-    private static JsonObject extractBlocks() {
+    private static JsonObject extractBlockProperties() {
         var rootJson = new JsonObject();
 
         var sawZeroYOffset = false;
@@ -287,11 +275,9 @@ public class Main {
 
             // Blocks share properties with all states
             var defaultState = block.defaultBlockState();
-            blockData.addProperty("replaceable", defaultState.canBeReplaced());
-
             String offsetType = "NONE";
             if (defaultState.hasOffsetFunction()) {
-                var vec =  defaultState.getOffset(new SingleBlockGetter(Blocks.GRASS.defaultBlockState()), new BlockPos(1, 2, 3));;
+                var vec = defaultState.getOffset(EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));;
 
                 if (vec.y == 0.0) {
                     sawZeroYOffset = true;
@@ -303,6 +289,7 @@ public class Main {
             }
 
             blockData.addProperty("offsetType", offsetType);
+            blockData.addProperty("replaceable", defaultState.canBeReplaced());
 
             rootJson.add(getBlockIdString(block), blockData);
         }
@@ -313,33 +300,5 @@ public class Main {
         }
 
         return rootJson;
-    }
-
-    private record SingleBlockGetter(BlockState blockState) implements BlockGetter {
-        @Nullable
-        @Override
-        public BlockEntity getBlockEntity(BlockPos blockPos) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public @NotNull BlockState getBlockState(BlockPos blockPos) {
-            return blockState;
-        }
-
-        @Override
-        public @NotNull FluidState getFluidState(BlockPos blockPos) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getHeight() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getMinBuildHeight() {
-            throw new UnsupportedOperationException();
-        }
     }
 }
