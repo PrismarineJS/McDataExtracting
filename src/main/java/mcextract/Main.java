@@ -9,16 +9,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.FluidState;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -84,7 +77,7 @@ public class Main {
 
             // Blocks
             try {
-                writeJson(outputDir, "blockProperties.json",blockPropertiesJson);
+                writeJson(outputDir, "blockProperties.json", blockPropertiesJson);
                 System.err.println("Done with block shapes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -93,7 +86,7 @@ public class Main {
 
             // Attributes
             try {
-                writeJson(outputDir, "attributes.json",attributesJson);
+                writeJson(outputDir, "attributes.json", attributesJson);
                 System.err.println("Done with attributes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -277,7 +270,7 @@ public class Main {
             var defaultState = block.defaultBlockState();
             String offsetType = "NONE";
             if (defaultState.hasOffsetFunction()) {
-                var vec = defaultState.getOffset(EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));;
+                var vec = defaultState.getOffset(EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));
 
                 if (vec.y == 0.0) {
                     sawZeroYOffset = true;
