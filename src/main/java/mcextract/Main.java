@@ -12,12 +12,14 @@ import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -50,13 +52,15 @@ public class Main {
         System.err.println("Done.");
 
         // Get --outputDir from args
-        var outputDir = getArg(args, "--outputDir", "");
+        var outputDir = getArg(args, "--outputDir", "output");
         if (!outputDir.isEmpty() && !outputDir.endsWith("/")) {
             outputDir += "/";
         }
+
         // make the output directory if it doesn't exist
+        var outputDirPath = Paths.get(outputDir);
         try {
-            Files.createDirectories(Paths.get(outputDir));
+            Files.createDirectories(outputDirPath);
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Failed to create output directory.");
@@ -70,7 +74,7 @@ public class Main {
         if (write) {
             // Block shapes
             try {
-                writeJson(outputDir, "blockCollisionShapes.json", blockShapesJson);
+                writeJson(outputDirPath.resolve("blockCollisionShapes.json"), blockShapesJson);
                 System.err.println("Done with block shapes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -79,7 +83,7 @@ public class Main {
 
             // Blocks
             try {
-                writeJson(outputDir, "blockProperties.json", blockPropertiesJson);
+                writeJson(outputDirPath.resolve("blockProperties.json"), blockPropertiesJson);
                 System.err.println("Done with block shapes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -88,7 +92,7 @@ public class Main {
 
             // Attributes
             try {
-                writeJson(outputDir, "attributes.json", attributesJson);
+                writeJson(outputDirPath.resolve("attributes.json"), attributesJson);
                 System.err.println("Done with attributes.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -123,10 +127,9 @@ public class Main {
         return attributesJson;
     }
 
-    public static void writeJson(String outputDir, String fileName, JsonObject json) throws IOException {
-        var outPath = outputDir + fileName;
-        System.err.println("Writing to '" + outPath + "'...");
-        Files.writeString(Paths.get(outPath), GSON.toJson(json));
+    public static void writeJson(Path path, JsonObject json) throws IOException {
+        System.err.println("Writing to '" + path + "'...");
+        Files.writeString(path, GSON.toJson(json));
     }
 
     // COLLISIONS
@@ -286,6 +289,7 @@ public class Main {
 
             blockData.addProperty("offsetType", offsetType);
             blockData.addProperty("replaceable", defaultState.canBeReplaced());
+            blockData.addProperty("fallingBlock", block instanceof FallingBlock);
 
             rootJson.add(getBlockIdString(block), blockData);
         }
