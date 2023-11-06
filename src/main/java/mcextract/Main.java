@@ -11,7 +11,9 @@ import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -21,9 +23,9 @@ import java.util.*;
 
 public class Main {
     private static final Gson GSON = new GsonBuilder()
-            .disableHtmlEscaping()
-            .setPrettyPrinting()
-            .create();
+        .disableHtmlEscaping()
+        .setPrettyPrinting()
+        .create();
 
     public static String getGameVersion() {
         SharedConstants.tryDetectVersion();
@@ -103,7 +105,7 @@ public class Main {
         System.err.println("Extracting Block shape data ...");
         var blockShapesJson = extractBlockCollisionShapes();
         System.err.println("Extracted data for " + blockShapesJson.getAsJsonObject("blocks").size() + " blocks"
-                + " and " + blockShapesJson.getAsJsonObject("shapes").size() + " distinct shapes.");
+            + " and " + blockShapesJson.getAsJsonObject("shapes").size() + " distinct shapes.");
         return blockShapesJson;
     }
 
@@ -177,13 +179,13 @@ public class Main {
                 allBlocksJson.add(blockId, blockJson);
 
                 System.err.println(blockId + ": " + boxesByState.length + " states, "
-                        + (boxesByState.length - blockJson.size()) + " empty");
+                    + (boxesByState.length - blockJson.size()) + " empty");
             }
         }
 
         var allShapesJson = new JsonObject();
         shapeIds.entrySet().stream().sorted(Map.Entry.comparingByValue())
-                .forEach(entry -> allShapesJson.add(entry.getValue().toString(), entry.getKey().toJson()));
+            .forEach(entry -> allShapesJson.add(entry.getValue().toString(), entry.getKey().toJson()));
 
         var rootJson = new JsonObject();
         rootJson.add("blocks", allBlocksJson);
@@ -243,7 +245,7 @@ public class Main {
     }
 
     @SuppressWarnings("unchecked")
-    private static Optional<BlockBehaviour.OffsetFunction> getOffsetFunction(BlockBehaviour.BlockStateBase block) {
+    private static Optional<BlockBehaviour.OffsetFunction> getOffsetFunction(BlockState block) {
         try {
             Field offsetFunctionField = BlockBehaviour.BlockStateBase.class.getDeclaredField("offsetFunction");
             offsetFunctionField.setAccessible(true);
@@ -270,7 +272,8 @@ public class Main {
             var defaultState = block.defaultBlockState();
             String offsetType = "NONE";
             if (defaultState.hasOffsetFunction()) {
-                var vec = defaultState.getOffset(EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));
+                var offsetFunction = getOffsetFunction(defaultState).orElseThrow();
+                var vec = offsetFunction.evaluate(Blocks.GRASS.defaultBlockState(), EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));
 
                 if (vec.y == 0.0) {
                     sawZeroYOffset = true;
