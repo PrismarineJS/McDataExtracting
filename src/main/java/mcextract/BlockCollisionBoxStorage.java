@@ -16,15 +16,15 @@ public class BlockCollisionBoxStorage {
             var boxesJson = shapeEntry.getValue().getAsJsonArray();
             var boxes = new ArrayList<AABB>(boxesJson.size());
             for (var element : boxesJson) {
-                var a = element.getAsJsonArray();
-                int i = 0;
+                var elementArray = element.getAsJsonArray();
                 boxes.add(new AABB(
-                        a.get(i++).getAsDouble(),
-                        a.get(i++).getAsDouble(),
-                        a.get(i++).getAsDouble(),
-                        a.get(i++).getAsDouble(),
-                        a.get(i++).getAsDouble(),
-                        a.get(i++).getAsDouble()));
+                        elementArray.get(0).getAsDouble(),
+                        elementArray.get(1).getAsDouble(),
+                        elementArray.get(2).getAsDouble(),
+                        elementArray.get(3).getAsDouble(),
+                        elementArray.get(4).getAsDouble(),
+                        elementArray.get(5).getAsDouble()
+                ));
             }
             shapes.put(Integer.parseInt(shapeEntry.getKey()), new Shape(boxes));
         }

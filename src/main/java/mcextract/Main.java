@@ -268,16 +268,19 @@ public class Main {
         for (var block : BuiltInRegistries.BLOCK) {
             var blockData = new JsonObject();
 
-            blockData.addProperty("maxHorizontalOffset", block.getMaxHorizontalOffset());
-            blockData.addProperty("maxVerticalOffset", block.getMaxVerticalOffset());
+            var propertyArray = new JsonArray();
 
             // Blocks share properties with all states
             var defaultState = block.defaultBlockState();
-            String offsetType = "NONE";
             if (defaultState.hasOffsetFunction()) {
+                var offsetData = new JsonObject();
+                offsetData.addProperty("maxHorizontalOffset", block.getMaxHorizontalOffset());
+                offsetData.addProperty("maxVerticalOffset", block.getMaxVerticalOffset());
+
                 var offsetFunction = getOffsetFunction(defaultState).orElseThrow();
                 var vec = offsetFunction.evaluate(Blocks.GRASS.defaultBlockState(), EmptyBlockGetter.INSTANCE, new BlockPos(1, 2, 3));
 
+                String offsetType;
                 if (vec.y == 0.0) {
                     sawZeroYOffset = true;
                     offsetType = "XZ";
@@ -285,11 +288,29 @@ public class Main {
                     sawNonZeroYOffset = true;
                     offsetType = "XYZ";
                 }
+
+                offsetData.addProperty("type", offsetType);
+
+                blockData.add("offsetData", offsetData);
             }
 
-            blockData.addProperty("offsetType", offsetType);
-            blockData.addProperty("replaceable", defaultState.canBeReplaced());
-            blockData.addProperty("fallingBlock", block instanceof FallingBlock);
+            if (defaultState.canBeReplaced()) {
+                propertyArray.add("replaceable");
+            }
+
+            if (defaultState.isAir()) {
+                propertyArray.add("air");
+            }
+
+            if (defaultState.requiresCorrectToolForDrops()) {
+                propertyArray.add("requiresCorrectToolForDrops");
+            }
+
+            if (block instanceof FallingBlock) {
+                propertyArray.add("fallingBlock");
+            }
+
+            blockData.add("properties", propertyArray);
 
             rootJson.add(getBlockIdString(block), blockData);
         }
