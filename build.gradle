@@ -35,5 +35,5 @@ dependencies {
 }
 
 application {
-    mainClassName = "mcextract.Main"
+    mainClass = "mcextract.Main"
 }
